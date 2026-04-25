@@ -1,0 +1,11 @@
+{
+  "name": "voicerecorder-www",
+  "private": true,
+  "version": "0.0.0",
+  "main": "server.js",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "^4.19.2",
+    "http-proxy-middleware": "^3.0.0"
+  }
+}

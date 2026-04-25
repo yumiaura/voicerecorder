@@ -1,0 +1,37 @@
+# Voice recorder: Flask + SQLite (local auth). Mount ./data for db and Ogg.
+name: voicerecorder
+
+networks:
+  voicerecorder_network:
+    name: voicerecorder_network
+    driver: bridge
+
+services:
+  voicerecorder_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: voicerecorder_api
+    # Do not pull from Docker Hub; use the image built from ./Dockerfile
+    pull_policy: build
+    container_name: voicerecorder_api
+    hostname: voicerecorder_api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      TZ: ${TZ:-UTC}
+      # Override host-relative paths from .env for in-container layout
+      SQLITE_PATH: /opt/app_data/app.db
+      RECORD_DIR: /opt/app_data/recordings
+    networks:
+      - voicerecorder_network
+    ports:
+      - "${API_PORT:-5050}:5000"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "32m"
+        max-file: "2"
+    volumes:
+      - ./data:/opt/app_data

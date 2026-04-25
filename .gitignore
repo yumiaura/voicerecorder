@@ -1,0 +1,10 @@
+/.env
+/.venv/
+/data/*.db
+/data/recordings/
+__pycache__/
+*.pyc
+node_modules/
+/www/src/fonts/*.ttf
+.DS_Store
+*.log
