@@ -32,7 +32,9 @@ STT_REQUEST_TIMEOUT_SEC = int(os.getenv("STT_REQUEST_TIMEOUT_SEC", "600"))
 STT_ADD_PENDING = STT_ENABLED
 
 # Local web UI / API (JWT, HS256)
-SECRET_KEY = os.getenv("SECRET_KEY", "***REMOVED***")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY is required")
 AUTH_USERNAME = os.getenv("AUTH_USERNAME", "admin")
 AUTH_PASSWORD = os.getenv("AUTH_PASSWORD", "admin")
 AUTH_JWT_HOURS = int(os.getenv("AUTH_JWT_HOURS", "168"))

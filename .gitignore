@@ -9,3 +9,5 @@ node_modules/
 .DS_Store
 *.log
 docs/CODE_STYLE.md
+scripts/git*.sh
+
