@@ -30,7 +30,11 @@ Local microphone recording to segmented Ogg files, web playback with time jumps,
    ./scripts/mic_select.sh
    ```
 
-   Put the resulting `PULSE_SOURCE` value into `.env`.
+   The script supports:
+   - ALSA (recommended for Docker worker)
+   - PulseAudio/PipeWire
+
+   Copy the printed values into `.env` (`RECORDER_INPUT`, `ALSA_DEVICE` or `PULSE_SOURCE`).
 
 4. Start API and web UI (from repository root):
 
@@ -100,14 +104,15 @@ RECORDER_CHANNELS=1
 
 If you see `Error opening input file default` in `voicerecorder_worker`:
 
-1. For ALSA: set `RECORDER_INPUT=alsa` and `ALSA_DEVICE=plughw:2,0`.
-2. For Pulse: set proper source from `scripts/mic_select.sh` in `.env`:
+1. Run `./scripts/mic_select.sh` and choose ALSA or Pulse.
+2. For ALSA: set `RECORDER_INPUT=alsa` and `ALSA_DEVICE=plughw:2,0`.
+3. For Pulse: set proper source from `scripts/mic_select.sh` in `.env`:
    - `PULSE_SOURCE=<your_source_name>`
-3. Check Pulse access for container:
+4. Check Pulse access for container:
    - `PULSE_SOCKET=/run/user/<uid>/pulse/native`
    - `PULSE_COOKIE=/home/<user>/.config/pulse/cookie`
    - `LOCAL_UID=<uid>`, `LOCAL_GID=<gid>`
-4. Restart worker:
+5. Restart worker:
    - `docker compose up -d --build voicerecorder_worker`
 
 ### "pull access denied for voicerecorder_api"
