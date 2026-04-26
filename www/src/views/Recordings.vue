@@ -6,7 +6,7 @@
       @click="error = ''"
     >
       <div class="m-auto text-center" style="cursor: pointer">
-        {{ error }} <i class="fa fa-times" />
+        {{ error }} <i class="fa fa-times"></i>
       </div>
     </div>
     <div
@@ -15,14 +15,14 @@
       @click="success = ''"
     >
       <div class="m-auto text-center" style="cursor: pointer">
-        {{ success }} <i class="fa fa-check" />
+        {{ success }} <i class="fa fa-check"></i>
       </div>
     </div>
     <div
       v-show="wait.length"
       class="alert alert-secondary text-center p-1 mb-2"
     >
-      <i class="fa fa-spinner fa-pulse" /> {{ wait.join(", ") }}
+      <i class="fa fa-spinner fa-pulse"></i> {{ wait.join(", ") }}
     </div>
 
     <div
@@ -34,7 +34,7 @@
         type="button"
         @click="logout"
       >
-        <i class="fa fa-sign-out-alt" /> Logout
+        <i class="fa fa-sign-out-alt"></i> Logout
       </button>
     </div>
 
@@ -74,7 +74,7 @@
           :disabled="wait.length > 0"
           @click="loadAll"
         >
-          <i class="fa fa-sync" /> RELOAD
+          <i class="fa fa-sync"></i> RELOAD
         </button>
       </div>
     </div>
@@ -244,7 +244,7 @@ module.exports = {
         .catch(function (err) {
           self.setErr(err);
         })
-        .finally(function () {
+        .then(function () {
           self.popWait("days");
         });
     },
@@ -308,7 +308,7 @@ module.exports = {
         .catch(function (err) {
           self.setErr(err);
         })
-        .finally(function () {
+        .then(function () {
           self.popWait("segments");
         });
     },

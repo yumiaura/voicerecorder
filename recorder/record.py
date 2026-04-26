@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Record PulseAudio to timed Ogg Vorbis segments in RECORD_DIR."""
+"""Record audio to timed Ogg Vorbis segments in RECORD_DIR."""
 
 import logging
 import os
@@ -34,10 +34,17 @@ logging.basicConfig(**LOGGING)
 logger = logging.getLogger(__name__)
 
 
-def pulse_device_arg() -> str:
+def recorder_input_args() -> tuple[str, str]:
+    """Return ffmpeg input format/device from env config."""
+    if config.RECORDER_INPUT == "alsa":
+        source = config.ALSA_DEVICE
+        # plughw is more tolerant for USB capture format negotiation.
+        if source.startswith("hw:"):
+            source = "plughw:" + source[3:]
+        return "alsa", source
     if config.PULSE_SOURCE:
-        return config.PULSE_SOURCE
-    return "default"
+        return "pulse", config.PULSE_SOURCE
+    return "pulse", "default"
 
 
 def make_output_path() -> Path:
@@ -50,13 +57,15 @@ def make_output_path() -> Path:
 
 
 def run_ffmpeg(
-    out_path: Path, duration_sec: int, source: str
+    out_path: Path, duration_sec: int, source: str, input_format: str
 ) -> int:
     cmd: List[str] = [
         "ffmpeg",
         "-y",
         "-f",
-        "pulse",
+        input_format,
+        "-ac",
+        str(config.RECORDER_CHANNELS),
         "-i",
         source,
         "-t",
@@ -89,25 +98,49 @@ def one_segment() -> bool:
         return False
     out = make_output_path()
     t0 = datetime.now(TIMEZONE)
-    source = pulse_device_arg()
-    rc = run_ffmpeg(out, sec, source)
+    input_format, source = recorder_input_args()
+    logger.info(
+        "START segment file=%s input_format=%s source=%s duration_sec=%s",
+        str(out),
+        input_format,
+        source,
+        sec,
+    )
+    rc = run_ffmpeg(out, sec, source, input_format)
     t1 = datetime.now(TIMEZONE)
     if rc != 0 or not out.is_file():
+        logger.error(
+            "FINISH segment failed file=%s rc=%s elapsed_sec=%.2f",
+            str(out),
+            rc,
+            (t1 - t0).total_seconds(),
+        )
         return False
     reg = register_segment(str(out), t0, t1)
     if not reg:
+        logger.error(
+            "FINISH segment db_register_failed file=%s elapsed_sec=%.2f",
+            str(out),
+            (t1 - t0).total_seconds(),
+        )
         return False
+    logger.info(
+        "FINISH segment ok file=%s elapsed_sec=%.2f",
+        str(out),
+        (t1 - t0).total_seconds(),
+    )
     return True
 
 
 def main() -> None:
     Path(config.RECORD_DIR).mkdir(parents=True, exist_ok=True)
     create_tables()
-    source = pulse_device_arg()
+    input_format, source = recorder_input_args()
     logger.info(
-        "Record loop RECORD_DIR=%s every %s min source=%s",
+        "Record loop RECORD_DIR=%s every %s min input_format=%s source=%s",
         config.RECORD_DIR,
         config.SEGMENT_MINUTES,
+        input_format,
         source,
     )
     while True:

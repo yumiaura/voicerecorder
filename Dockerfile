@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY config.py ./
 COPY api/ ./api/
+COPY recorder/ ./recorder/
+COPY worker/ ./worker/
 COPY www/ ./www/
 RUN pip install --no-cache-dir -r api/requirements.txt
 

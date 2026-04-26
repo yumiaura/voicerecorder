@@ -22,8 +22,9 @@ if (getToken()) {
   setToken(getToken());
 }
 
-const Recordings = httpVueLoader("views/Recordings.vue");
-const Login = httpVueLoader("views/Login.vue");
+var APP_VER = "20260426_001";
+const Recordings = httpVueLoader("views/Recordings.vue?v=" + APP_VER);
+const Login = httpVueLoader("views/Login.vue?v=" + APP_VER);
 
 const routes = [
   { path: "/login", name: "login", component: Login, meta: { public: true } },
@@ -35,13 +36,22 @@ const router = new VueRouter({ routes: routes, mode: "hash" });
 window.__VRRouter = router;
 
 router.beforeEach(function (to, from, next) {
+  var hasToken = !!getToken();
   if (to.matched.some(function (r) {
     return r.meta && r.meta.public;
   })) {
+    if (hasToken && to.name === "login") {
+      next({ name: "home" });
+      return;
+    }
     next();
     return;
   }
-  if (!getToken()) {
+  if (!hasToken) {
+    if (to.name === "login") {
+      next();
+      return;
+    }
     next({ name: "login" });
     return;
   }
@@ -63,7 +73,9 @@ axios.interceptors.response.use(
           setToken("");
           if (window.__VRRouter) {
             try {
-              window.__VRRouter.push({ name: "login" });
+              if (window.__VRRouter.currentRoute.name !== "login") {
+                window.__VRRouter.replace({ name: "login" });
+              }
             } catch (e) {
               window.location.hash = "#/login";
             }

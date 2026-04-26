@@ -7,14 +7,11 @@
       @click="error = ''"
     >
       <div class="m-auto text-center" style="cursor: pointer">
-        {{ error }} <i class="fa fa-times" />
+        {{ error }}
       </div>
     </div>
-    <div
-      v-show="wait.length"
-      class="alert alert-secondary text-center p-1 mb-2"
-    >
-      <i class="fa fa-spinner fa-pulse" /> {{ wait.join(", ") }}
+    <div v-if="submitting" class="alert alert-secondary text-center p-1 mb-2">
+      Signing in...
     </div>
     <form @submit.prevent="submit">
       <div class="mb-2">
@@ -25,7 +22,7 @@
           type="text"
           name="username"
           autocomplete="username"
-          :disabled="wait.length > 0"
+          :disabled="submitting"
           required
         />
       </div>
@@ -37,7 +34,7 @@
           type="password"
           name="password"
           autocomplete="current-password"
-          :disabled="wait.length > 0"
+          :disabled="submitting"
           required
         />
       </div>
@@ -45,9 +42,9 @@
         <button
           class="btn btn-primary btn-sm fw-bold w-100"
           type="submit"
-          :disabled="wait.length > 0"
+          :disabled="submitting"
         >
-          <i class="fa fa-sign-in-alt" /> LOGIN
+          LOGIN
         </button>
       </div>
     </form>
@@ -55,57 +52,80 @@
 </template>
 
 <script>
-/* global axios, sessionStorage */
+/* global sessionStorage */
 
 module.exports = {
   name: "Login",
   data: function () {
     return {
-      wait: [],
+      submitting: false,
       error: "",
       form: { username: "", password: "" },
     };
   },
+  created: function () {
+    if (sessionStorage.getItem("vr_access_token")) {
+      this.$router.replace({ name: "home" });
+    }
+  },
   methods: {
-    submit: function () {
+    submit: async function () {
       var self = this;
+      if (self.submitting) {
+        return;
+      }
       self.error = "";
-      self.wait.push("login");
-      axios
-        .post("/api/auth/login", {
-          username: self.form.username,
-          password: self.form.password,
-        })
-        .then(function (r) {
-          var t = (r.data && r.data.access_token) || "";
-          if (!t) {
-            self.error = "No token in response";
-            return;
+      self.submitting = true;
+      var timer = null;
+      try {
+        // Safety valve: never leave the form blocked forever.
+        timer = setTimeout(function () {
+          self.submitting = false;
+          if (!self.error) {
+            self.error = "Login timeout. Check network and server logs.";
           }
-          if (window.__vrSetToken) {
-            window.__vrSetToken(t);
-          } else {
-            sessionStorage.setItem("vr_access_token", t);
-            axios.defaults.headers.common["Authorization"] = "Bearer " + t;
-          }
-          self.$router.push({ name: "home" });
-        })
-        .catch(function (err) {
-          self.error = err.response
-            ? err.response.data && err.response.data.error
-              ? (typeof err.response.data.error === "string"
-                  ? err.response.data.error
-                  : JSON.stringify(err.response.data.error))
-              : (err.response.status + " " + err.response.statusText)
-            : err.message;
-        })
-        .finally(function () {
-          var k = "login";
-          var i = self.wait.indexOf(k);
-          if (i !== -1) {
-            self.wait.splice(i, 1);
-          }
+        }, 15000);
+
+        var response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: self.form.username,
+            password: self.form.password,
+          }),
         });
+        var data = await response.json().catch(function () {
+          return {};
+        });
+        if (!response.ok) {
+          self.error = data && data.error
+            ? (typeof data.error === "string"
+                ? data.error
+                : JSON.stringify(data.error))
+            : (response.status + " " + response.statusText);
+          return;
+        }
+        var token = data && data.access_token ? data.access_token : "";
+        if (!token) {
+          self.error = "No token in response";
+          return;
+        }
+        if (window.__vrSetToken) {
+          window.__vrSetToken(token);
+        } else {
+          sessionStorage.setItem("vr_access_token", token);
+        }
+        self.$router.push({ name: "home" });
+      } catch (err) {
+        self.error = err && err.message ? err.message : String(err);
+      } finally {
+        if (timer) {
+          clearTimeout(timer);
+        }
+        self.submitting = false;
+      }
     },
   },
 };

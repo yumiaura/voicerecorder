@@ -21,13 +21,14 @@ services:
       - .env
     environment:
       TZ: ${TZ:-UTC}
+      FLASK_PORT: 5010
       # Override host-relative paths from .env for in-container layout
       SQLITE_PATH: /opt/app_data/app.db
       RECORD_DIR: /opt/app_data/recordings
     networks:
       - voicerecorder_network
     ports:
-      - "${API_PORT:-5050}:5000"
+      - "${API_PORT:-5010}:5010"
     logging:
       driver: "json-file"
       options:
@@ -35,3 +36,56 @@ services:
         max-file: "2"
     volumes:
       - ./data:/opt/app_data
+
+  voicerecorder_www:
+    build:
+      context: ./www
+      dockerfile: Dockerfile
+    image: voicerecorder_www
+    pull_policy: build
+    container_name: voicerecorder_www
+    hostname: voicerecorder_www
+    restart: unless-stopped
+    depends_on:
+      - voicerecorder_api
+    environment:
+      VR_API: http://voicerecorder_api:5010
+      VR_WWW: 5011
+    networks:
+      - voicerecorder_network
+    ports:
+      - "${WWW_PORT:-5011}:5011"
+    volumes:
+      - ./www:/opt/www
+
+  voicerecorder_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: voicerecorder_worker
+    pull_policy: build
+    container_name: voicerecorder_worker
+    hostname: voicerecorder_worker
+    restart: unless-stopped
+    depends_on:
+      - voicerecorder_api
+    env_file:
+      - .env
+    environment:
+      TZ: ${TZ:-UTC}
+      RECORD_DIR: /opt/app_data/recordings
+      SQLITE_PATH: /opt/app_data/app.db
+      RECORDER_INPUT: ${RECORDER_INPUT:-alsa}
+      ALSA_DEVICE: ${ALSA_DEVICE:-hw:2,0}
+      # PulseAudio socket from host (override PULSE_SOCKET in .env if UID differs)
+      PULSE_SERVER: unix:/tmp/pulse/native
+      PULSE_COOKIE: /tmp/pulse/cookie
+    networks:
+      - voicerecorder_network
+    command: ["python3", "recorder/record.py"]
+    devices:
+      - "/dev/snd:/dev/snd"
+    volumes:
+      - ./data:/opt/app_data
+      - "${PULSE_SOCKET:-/run/user/1000/pulse/native}:/tmp/pulse/native"
+      - "${PULSE_COOKIE:-/home/aura/.config/pulse/cookie}:/tmp/pulse/cookie:ro"

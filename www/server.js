@@ -15,6 +15,9 @@ app.use(
   createProxyMiddleware({
     target: apiTarget,
     changeOrigin: true,
+    pathRewrite: {
+      "^/": "/api/",
+    },
   })
 );
 app.use(express.static(staticRoot));

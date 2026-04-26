@@ -8,3 +8,4 @@ node_modules/
 /www/src/fonts/*.ttf
 .DS_Store
 *.log
+docs/CODE_STYLE.md

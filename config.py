@@ -16,6 +16,9 @@ PROJ_ROOT = Path(__file__).resolve().parent
 RECORD_DIR = os.getenv("RECORD_DIR", str(PROJ_ROOT / "data" / "recordings"))
 SEGMENT_MINUTES = int(os.getenv("SEGMENT_MINUTES", "5"))
 PULSE_SOURCE = (os.getenv("PULSE_SOURCE") or "").strip()
+RECORDER_INPUT = (os.getenv("RECORDER_INPUT", "pulse") or "pulse").strip().lower()
+ALSA_DEVICE = (os.getenv("ALSA_DEVICE", "plughw:2,0") or "plughw:2,0").strip()
+RECORDER_CHANNELS = int(os.getenv("RECORDER_CHANNELS", "1"))
 SAMPLE_RATE = int(os.getenv("SAMPLE_RATE", "48000"))
 
 SQLITE_PATH = os.getenv("SQLITE_PATH", str(PROJ_ROOT / "data" / "app.db"))

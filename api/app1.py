@@ -214,7 +214,9 @@ def create_app() -> Flask:
 
     @app.route("/")
     def index_page():
-        return send_from_directory(www_dir, "index.html")
+        resp = send_from_directory(www_dir, "index.html")
+        resp.headers["Cache-Control"] = "no-store, max-age=0"
+        return resp
 
     @app.route("/<path:rel>")
     def static_www(rel: str):
@@ -224,7 +226,10 @@ def create_app() -> Flask:
             return jsonify({"error": "NotFound"}), 404
         if not target.is_file():
             return index_page()
-        return send_file(target, conditional=True)
+        resp = send_file(target, conditional=True)
+        if rel.endswith((".js", ".vue", ".html")):
+            resp.headers["Cache-Control"] = "no-store, max-age=0"
+        return resp
 
     @app.errorhandler(400)
     def bad_request(err):
@@ -250,6 +255,18 @@ def create_app() -> Flask:
             404,
         )
 
+    @app.errorhandler(405)
+    def method_not_allowed(err):
+        return (
+            jsonify(
+                {
+                    "error": "Method Not Allowed",
+                    "message": str(err),
+                }
+            ),
+            405,
+        )
+
     @app.errorhandler(ValidationError)
     def handle_validation_error(err):
         return jsonify({"error": err.messages}), 400
@@ -258,6 +275,16 @@ def create_app() -> Flask:
     def handle_exception(exc):
         if isinstance(exc, werkzeug.exceptions.NotFound):
             return jsonify({"error": "NotFound"}), 404
+        if isinstance(exc, werkzeug.exceptions.MethodNotAllowed):
+            return (
+                jsonify(
+                    {
+                        "error": "Method Not Allowed",
+                        "message": str(exc),
+                    }
+                ),
+                405,
+            )
         logger.error(f"{type(exc).__name__}: {str(exc)}\n{traceback.format_exc()}")
         return (
             jsonify({"error": f"{type(exc).__name__}", "message": str(exc)}),
