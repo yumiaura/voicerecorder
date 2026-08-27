@@ -2,6 +2,7 @@
 /.venv/
 /data/*.db
 /data/recordings/
+/data/logs/
 __pycache__/
 *.pyc
 node_modules/

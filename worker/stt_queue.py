@@ -7,6 +7,7 @@ import os
 import sys
 import time
 import traceback
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Optional
 
@@ -21,8 +22,19 @@ import config
 from api.models import Segment, create_tables, now_tz
 from api.stt_transcribe import transcribe_segment_path
 
+LOG_DIR = Path(config.LOG_DIR)
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 LOGGING = {
-    "handlers": [logging.StreamHandler()],
+    "handlers": [
+        logging.StreamHandler(),
+        RotatingFileHandler(
+            LOG_DIR / "stt_queue.log",
+            maxBytes=config.LOG_MAX_BYTES,
+            backupCount=config.LOG_BACKUP_COUNT,
+            encoding="utf-8",
+        ),
+    ],
     "format": (
         "%(asctime)s.%(msecs)03d [%(levelname)s]: "
         "(%(name)s.%(funcName)s) %(message)s"

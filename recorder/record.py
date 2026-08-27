@@ -9,6 +9,7 @@ import subprocess
 import time
 import traceback
 from datetime import datetime
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import List
 
@@ -21,8 +22,19 @@ import config
 from api.models import create_tables, TIMEZONE
 from api.segment_registrar import register_segment
 
+LOG_DIR = Path(config.LOG_DIR)
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 LOGGING = {
-    "handlers": [logging.StreamHandler()],
+    "handlers": [
+        logging.StreamHandler(),
+        RotatingFileHandler(
+            LOG_DIR / "recorder.log",
+            maxBytes=config.LOG_MAX_BYTES,
+            backupCount=config.LOG_BACKUP_COUNT,
+            encoding="utf-8",
+        ),
+    ],
     "format": (
         "%(asctime)s.%(msecs)03d [%(levelname)s]: "
         "(%(name)s.%(funcName)s) %(message)s"
