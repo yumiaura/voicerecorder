@@ -23,6 +23,12 @@ SAMPLE_RATE = int(os.getenv("SAMPLE_RATE", "48000"))
 
 SQLITE_PATH = os.getenv("SQLITE_PATH", str(PROJ_ROOT / "data" / "app.db"))
 
+# Logs live next to the recordings, i.e. inside the mounted ./data volume,
+# so they never accumulate on the container filesystem.
+LOG_DIR = os.getenv("LOG_DIR", str(Path(RECORD_DIR).parent / "logs"))
+LOG_MAX_BYTES = int(os.getenv("LOG_MAX_BYTES", str(10 * 1024 * 1024)))
+LOG_BACKUP_COUNT = int(os.getenv("LOG_BACKUP_COUNT", "5"))
+
 STT_ENABLED = (os.getenv("STT_ENABLED", "0").lower() in TRUE_VALUES)
 STT_URL = os.getenv("STT_URL", "http://localhost:5099").rstrip("/")
 STT_INTERVAL_SEC = int(os.getenv("STT_INTERVAL_SEC", "5"))

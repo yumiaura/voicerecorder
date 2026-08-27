@@ -7,6 +7,7 @@ import os
 import sys
 import traceback
 from datetime import date, datetime
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 # Project root for imports and static files
@@ -33,8 +34,19 @@ from api.validators import LoginBodySchema, SegmentsFilterSchema
 
 load_dotenv(find_dotenv())
 
+LOG_DIR = Path(config.LOG_DIR)
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 LOGGING = {
-    "handlers": [logging.StreamHandler()],
+    "handlers": [
+        logging.StreamHandler(),
+        RotatingFileHandler(
+            LOG_DIR / "api.log",
+            maxBytes=config.LOG_MAX_BYTES,
+            backupCount=config.LOG_BACKUP_COUNT,
+            encoding="utf-8",
+        ),
+    ],
     "format": "%(asctime)s.%(msecs)03d [%(levelname)s]: (%(name)s) %(message)s",
     "level": logging.INFO,
     "datefmt": "%Y-%m-%d %H:%M:%S",
